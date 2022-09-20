@@ -72,12 +72,16 @@ public class AddressBookController {
      */
     @GetMapping("/default")
     public R getDefault(){
+
+        System.out.println("git删除测试");
+
         Long userId = BaseContext.getCurrentId();
         AddressBook one = addressBookService.getOne(
                 new LambdaQueryWrapper<AddressBook>()
                         .eq(AddressBook::getIsDefault, true)
                         .eq(AddressBook::getUserId,userId));
         return R.success(one);
+
     }
 
 
