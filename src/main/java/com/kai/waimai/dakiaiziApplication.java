@@ -18,7 +18,8 @@ public class dakiaiziApplication {
 
         SpringApplication.run(dakiaiziApplication.class,args);
         log.info("外卖启动啦");
-
+        log.info("第一次测试");
+        //
 
     }
 
