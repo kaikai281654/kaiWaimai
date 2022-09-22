@@ -9,6 +9,7 @@ import com.kai.waimai.utils.ValidateCodeUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -16,6 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import javax.servlet.http.HttpSession;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 @RestController
 @RequestMapping("/user")
@@ -24,6 +26,10 @@ public class UserController {
 
     @Autowired
     private UserService service;
+
+
+    @Autowired
+    private RedisTemplate redisTemplate;
 
     @PostMapping("/sendMsg")
     public R<String> sendMsg(@RequestBody User user, HttpSession session){
@@ -38,7 +44,12 @@ public class UserController {
             log.info("验证码是：{}",code);
 
             //需要将生成的验证码保存到session
-            session.setAttribute(phone,code);
+//            session.setAttribute(phone,code);
+
+            //将验证码保存到redis,并且设置有效期
+            redisTemplate.opsForValue().set(phone,code,5, TimeUnit.MINUTES);
+
+
             return R.success("短信发送成功"+code);
 
         }
@@ -60,7 +71,11 @@ public class UserController {
         String code =map.get("code").toString();
 
         //从session中获取保存的验证码
-        Object attribute = session.getAttribute(phone);
+//        Object attribute = session.getAttribute(phone);
+
+        //从redis中获取缓存的验证码
+        Object attribute = redisTemplate.opsForValue().get(phone);
+
 
         if(attribute!=null && attribute.equals(code)){
             //判断成功再判断用户是否新用户
@@ -76,6 +91,8 @@ public class UserController {
                 service.save(one);
             }
             session.setAttribute("user",one.getId());
+            //用户登陆成功删除缓存的验证码
+            redisTemplate.delete(phone);
             return R.success(one);
 
         }
